@@ -1,0 +1,7 @@
+---
+- name: Reiniciando o MySQL
+  ansible.builtin.service:
+    name: mysql
+    state: restarted
+    enabled: yes
+  become: true

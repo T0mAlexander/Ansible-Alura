@@ -1,0 +1,6 @@
+---
+- name: Reiniciar o serviço do Apache
+  ansible.builtin.service:
+    name: apache2
+    state: restarted
+  become: true

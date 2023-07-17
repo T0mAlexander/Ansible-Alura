@@ -1,0 +1,29 @@
+---
+- name: Instalando pacotes e dependências
+  ansible.builtin.apt:
+    name:
+      - mysql-server-8.0
+      - python3-pymysql
+      - python3-mysqldb
+  become: true
+
+- name: Atualizando o arquivo /etc/mysql/my.cnf
+  ansible.builtin.template:
+    src: ../files/my.cnf
+    dest: /etc/mysql/my.cnf        
+  become: true
+
+- name: Criando banco de dados MySQL
+  command: mysql -u root --execute="CREATE DATABASE IF NOT EXISTS {{ wp_db_name }};"
+  become: true
+
+- name: Criando um usuário MySQL
+  shell: mysql -u root --execute="CREATE USER IF NOT EXISTS '{{ wp_username }}'@'%' IDENTIFIED BY '{{ wp_password }}';"
+  become: true
+  with_items:
+    - '{{ wp_host_ip }}'
+
+- name: 'Garantindo permissões ao usuário MySQL'  
+  command: mysql -u root --execute="GRANT ALL PRIVILEGES ON {{ wp_db_name }}.* TO '{{ wp_username }}'@'%'; FLUSH PRIVILEGES;"
+  become: true
+  ignore_errors: true
