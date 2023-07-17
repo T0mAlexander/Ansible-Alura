@@ -1,0 +1,101 @@
+- hosts: database
+  tasks:
+  - name: Instalando pacotes e dependências
+    ansible.builtin.apt:
+      name:
+        - mysql-server-8.0
+        - python3-pymysql
+        - python3-mysqldb
+    become: yes
+
+  - name: Atualizando o arquivo /etc/mysql/my.cnf
+    ansible.builtin.template:
+      src: files/my.cnf
+      dest: /etc/mysql/my.cnf        
+    become: yes
+
+  - name: Reiniciando o MySQL
+    ansible.builtin.service:
+      name: mysql
+      state: restarted
+      enabled: yes
+    become: yes
+
+  - name: Criando banco de dados MySQL
+    command: mysql -u root --execute="CREATE DATABASE IF NOT EXISTS wordpress_db;"
+    become: yes
+
+  - name: Criando um usuário MySQL
+    shell: mysql -u root --execute="CREATE USER IF NOT EXISTS 'wordpress_user'@'%' IDENTIFIED BY '123';"
+    become: yes
+    with_items:
+      - 'localhost'
+      - '127.0.0.1'
+      - '192.168.56.10'
+
+  - name: 'Garantindo permissões ao usuário MySQL'  
+    command: mysql -u root --execute="GRANT ALL PRIVILEGES ON wordpress_db.* TO 'wordpress_user'@'%'; FLUSH PRIVILEGES;"
+    become: yes
+    ignore_errors: yes
+# ------------------------------------------
+# ------------------------------------------
+- hosts: wordpress
+  handlers:
+    - name: Reiniciando o Apache
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
+      become: yes
+  tasks:
+    - name: Instalando pacotes e dependências
+      ansible.builtin.apt:
+        name:
+          - php8.1
+          - apache2
+          - libapache2-mod-php8.1
+          - php8.1-gd
+          - php8.1-ssh2
+          - python3-pip
+          - php8.1-mysql
+        state: latest
+      become: yes
+
+    - name: Baixando Wordpress
+      ansible.builtin.get_url:
+        url: https://br.wordpress.org/latest-pt_BR.tar.gz
+        dest: /tmp/wordpress-6.2.2-pt_BR.tar.gz
+
+    - name: Descompacta o wordpress
+      ansible.builtin.unarchive:
+        src: /tmp/wordpress-6.2.2-pt_BR.tar.gz
+        dest: /var/www/
+        remote_src: true
+      become: yes
+
+    - name: Copiando o arquivo de configuração do Wordpress da máquina virtual
+      ansible.builtin.copy:
+        src: /var/www/wordpress/wp-config-sample.php
+        dest: /var/www/wordpress/wp-config.php
+        remote_src: yes
+      become: yes
+
+    - name: Integrando Wordpress ao banco MySQL
+      ansible.builtin.replace:
+        path: /var/www/wordpress/wp-config.php
+        regexp: '{{ item.regex }}'
+        replace: '{{ item.value }}'
+        backup: yes
+      with_items:
+        - { regex: 'nome_do_banco_de_dados_aqui', value: 'wordpress_db'}
+        - { regex: 'nome_de_usuario_aqui', value: 'wordpress_user'}
+        - { regex: 'senha_aqui', value: 123}
+        - { regex: 'localhost', value: '192.168.56.11'}
+      become: yes
+
+    - name: Configurando Apache para o Wordpress
+      ansible.builtin.copy:
+        src: files/000-default.conf
+        dest: /etc/apache2/sites-available/000-default.conf
+      become: yes
+      notify:
+        - Reiniciando o Apache
