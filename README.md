@@ -67,13 +67,14 @@
     <nome-do-host>:
       ansible_ssh_pass: vagrant
       ansible_ssh_user: vagrant
+      ansible_ssh_private_key_file: .vagrant/machines/<host>/<provedor-vm>/private_key
       ansible_host: <ip-da-máquina>
   ```
 
   4.3
 
   ```bash
-  ansible <nome-do-host> -i hosts.yaml -u <usuário> --private-key .vagrant/machines/<nome-do-host>/<provedor>/private_key -m ping -m shell -a 'echo Hello, Ansible!'
+  ansible <nome-do-host> -i hosts.yaml -m shell -a 'echo Hello, Ansible!'
   ```
 
 5. Conecte-se a máquina virtual
