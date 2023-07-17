@@ -53,10 +53,10 @@
 
 4. Crie um arquivo com informações do host
 
-  4.1 - Crie o arquivo com o vim no formato `.yaml`
+  4.1 - Crie o arquivo com o vim no formato `.yml`
 
   ```bash
-  vim hosts.yaml
+  vim hosts.yml
   ```
 
   4.2 - Insira as seguintes informações
@@ -74,7 +74,7 @@
   4.3
 
   ```bash
-  ansible <nome-do-host> -i hosts.yaml -m shell -a 'echo Hello, Ansible!'
+  ansible <nome-do-host> -i hosts.yml -m shell -a 'echo Hello, Ansible!'
   ```
 
 5. Conecte-se a máquina virtual
